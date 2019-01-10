@@ -514,6 +514,21 @@ int cpuai(char check)
 	int flag=0;
 	do
 	{
+	    if(square[1]=='1')
+        {
+            if((square[2]==square[3]==check)||(square[4]==square[7]==check)||(square[5]==square[9]==check))
+                return 1;
+        }
+        else if(square[2]=='2')
+        {
+            if((square[1]==square[3]==check)||(square[5]==square[8]==check))
+                return 2;
+        }
+        else if(square[3]=='3')
+        {
+            if((square[1]==square[2]==check)||(square[4]==square[7]==check)||(square[5]==square[9]==check))
+                return 1;
+        }
 		if(square[1]==square[2]&&square[1]==check&&square[3]=='3')
 			return 3;
 		else if(square[2]==square[3]&&square[2]==check&&square[1]=='1')
