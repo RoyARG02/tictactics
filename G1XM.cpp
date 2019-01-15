@@ -2,7 +2,6 @@
 #include<windows.h>
 #include<stdlib.h>
 #include<iostream>
-#include<string.h>
 #include<fstream>
 #include<conio.h>
 #include<stdbool.h>
@@ -10,26 +9,21 @@
 using namespace std;
 
 char square[10] = {'0','1','2','3','4','5','6','7','8','9'};
+bool readSuccess;
+
 int menu();
+BOOL gotoxy(const WORD, const WORD);
 void pausemenu(char);
 void menuoutline(const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&);
 void gameSolo();
 void gameVersus();
-void markwrite(char,char);
-void timedelay();
-void warning();
-void instructions();
+void markwrite(int,char);
 void cpuai();
 int checkwin();
-void board(int,char);
-void box(int,char);
+void board(int,int);
+void box(int,int*);
 void vacantSpace();
 void reset();
-int z=0;
-bool readSuccess;
-char mark;
-char choice='\0';
-char compmark;
 
 BOOL gotoxy(const WORD x,const WORD y)
 {
@@ -169,21 +163,16 @@ void reset()
 
 int main()
 {
-	/*gotoxy(3,21);
+    system("cls");
+	gotoxy(3,21);
 	cout<<"TICTACTICS";
 	gotoxy(3,22);
 	cout<<"PRESS ANY KEY";
-	gotoxy(33,24);
-	cout<<"Build 15116 V 3.0\n";
+	gotoxy(3,1);
+	cout<<"Build 0115M V 3.2";
+	gotoxy(0,28);
 	getch();
-	statin.open("gamest.dat",ios::in|ios::out|ios::binary);
-	if(!statin)
-		tttics.updatestats('?');
-	statin.read((char *)&tttics,sizeof(stats));
-	timedelay();
-	mainmenu();
-	return 0;*/
-
+	system("cls");
 	int mode;
 	while(1)
     {
@@ -320,10 +309,7 @@ void pausemenu(char call)
     gotoxy(3,28);
     pauseopt=input(getch());
 	if(pauseopt==call)
-	{
-		choice='0';
 		return;
-	}
 	else if(pauseopt=='Q')
 	{
 	    reset();
@@ -332,6 +318,7 @@ void pausemenu(char call)
     else if(pauseopt=='R')
 	{
 		reset();
+		gameVersus();
 	}
 	else
         goto quitsession;
@@ -340,7 +327,8 @@ void pausemenu(char call)
 void gameVersus()
 {
 	int player=1;
-	char mark,choice='\0',prev='\0';
+	char mark,choice='\0';
+	int prev=0;
 	do
 	{
 
@@ -353,17 +341,19 @@ void gameVersus()
 		mark=(player == 1) ? 'X' : 'O';
 		if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
         {
-            prev=choice;
+            prev=(int)choice-48;
             markwrite(prev,mark);
         }
-        else if(choice==27)
-		{
-			pausemenu(choice);
-			player--;
-		}
+        else
+            player--;
+        if(choice==27)
+        {
+            pausemenu(choice);
+            choice='0';
+        }
 		player++;
 	}while(checkwin()==-1);
-	board(checkwin(),'0');
+	board(0,checkwin());
 	if(checkwin())
 	{
 		if(--player==1)
@@ -390,37 +380,38 @@ void gameVersus()
 int checkwin()
 {
 	if (square[1] == square[2] && square[2] == square[3])
-		return 123;
+		return 321;
 	else if (square[4] == square[5] && square[5] == square[6])
-		return 456;
+		return 654;
 	else if (square[7] == square[8] && square[8] == square[9])
-		return 789;
+		return 987;
 	else if (square[1] == square[4] && square[4] == square[7])
-		return 147;
+		return 741;
 	else if (square[2] == square[5] && square[5] == square[8])
-		return 256;
+		return 652;
 	else if (square[3] == square[6] && square[6] == square[9])
-		return 369;
+		return 963;
 	else if (square[1] == square[5] && square[5] == square[9])
-		return 159;
+		return 951;
 	else if (square[3] == square[5] && square[5] == square[7])
-		return 357;
+		return 753;
 	else if (square[1] != '1' && square[2] != '2' && square[3] != '3' &&square[4] != '4' && square[5] != '5' && square[6] != '6' && square[7] != '7' && square[8] != '8' && square[9] != '9')
 		return 0;
 	else
 		return -1;
 }
 
-void board(int mode,char write)  //write is the current mark by player/cpu
+void board(int mode,int WRITE)  //write is the current mark by player/cpu
 {
 	system("cls");
+	int write=WRITE;
 	if(mode==1)
         boardHeader("SOLO","YOU[X]","COMPUTER[O]","Esc","PAUSE","1-9","MARK","\0","\0");
     else if(mode==-1)
         boardHeader("SOLO","YOU[O]","COMPUTER[X]","Esc","PAUSE","1-9","MARK","\0","\0");
 	else if(mode==2)
         boardHeader("VERSUS","PLAYER 1[X]","PLAYER 2[O]","Esc","PAUSE","1-9","MARK","\0","\0");
-    int verPos=8,horPOS=1;
+    int verPos=8,element=1;
     while(verPos<19)
     {
         gotoxy(55,verPos);
@@ -428,16 +419,18 @@ void board(int mode,char write)  //write is the current mark by player/cpu
         {
             cout << "-----+-----+-----" ;
             verPos++;
+            if(write<WRITE)
+                WRITE=WRITE/10;
         }
         else
         {
-            box(horPOS,write);cout<<"|";box(horPOS+1,write);cout<<"|";box(horPOS+2,write);       //-1^verPos
+            box(element,&write);cout<<"|";box(element+1,&write);cout<<"|";box(element+2,&write);
+            gotoxy(55,++verPos);write=WRITE;
+            box(-element,&write);cout <<"|";box(-element-1,&write);cout<<"|";box(-element-2,&write);
+            gotoxy(55,++verPos);write=WRITE;
+            box(element,&write);cout<<"|";box(element+1,&write);cout<<"|";box(element+2,&write);
             gotoxy(55,++verPos);
-            box(-horPOS,write);cout <<"|";box(-horPOS-1,write);cout<<"|";box(-horPOS-2,write);
-            gotoxy(55,++verPos);
-            box(horPOS,write);cout<<"|";box(horPOS+1,write);cout<<"|";box(horPOS+2,write);
-            gotoxy(55,++verPos);
-            horPOS+=3;
+            element+=3;
         }
     }
 }
@@ -459,36 +452,44 @@ void menuoutline(const string &main,const string &sel1,const string &opt1,const 
 	return;
 }
 
-void markwrite(char x,char MARK)
+void markwrite(int x,char MARK)
 {
-	if (x == '1' && square[1] == '1')
+	if (square[x] == '1')
 		square[1] = MARK;
-	else if (x == '2' && square[2] == '2')
+	else if (square[x] == '2')
 		square[2] = MARK;
-	else if (x == '3' && square[3] == '3')
+	else if (square[x] == '3')
 		square[3] = MARK;
-	else if (x == '4' && square[4] == '4')
+	else if (square[x] == '4')
 		square[4] = MARK;
-	else if (x == '5' && square[5] == '5')
+	else if (square[x] == '5')
 		square[5] = MARK;
-	else if (x == '6' && square[6] == '6')
+	else if (square[x] == '6')
 		square[6] = MARK;
-	else if (x == '7' && square[7] == '7')
+	else if (square[x] == '7')
 		square[7] = MARK;
-	else if (x == '8' && square[8] == '8')
+	else if (square[x] == '8')
 		square[8] = MARK;
-	else if (x == '9' && square[9] == '9')
+	else if (square[x] == '9')
 		square[9] = MARK;
 }
 
-void box(int check,char curr)
+void box(int check,int *writ)
 {
-    if(check+48==curr)
+    int curr=(*writ)%10;
+    if(check==curr)
         cout<<"+---+";
-    else if((-check)+48==curr)
+    else if((-check)==curr)
         cout<<"| "<<square[-check]<<" |";
     else if(check<0)
+    {
         cout<<"  "<<square[-check]<<"  ";
+        return;
+    }
     else
+    {
         cout<<"     ";
+        return;
+    }
+    *writ=(*writ)/10;
 }
