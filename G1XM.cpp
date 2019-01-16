@@ -1,5 +1,6 @@
 #include<iomanip>
 #include<windows.h>
+#include<time.h>
 #include<stdlib.h>
 #include<iostream>
 #include<fstream>
@@ -8,21 +9,23 @@
 
 using namespace std;
 
-char square[10] = {'0','1','2','3','4','5','6','7','8','9'};
+char square[10];
+char vacant[10];
 bool readSuccess;
 
 int menu();
 BOOL gotoxy(const WORD, const WORD);
 void pausemenu(char);
 void menuoutline(const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&);
-void gameSolo();
+void gameSolo(int);
 void gameVersus();
 void markwrite(int,char);
-void cpuai();
+int compare(int,int,char);
+char cpuai(int);
 int checkwin();
 void board(int,int);
 void box(int,int*);
-void vacantSpace();
+int vacantSpace(short int);
 void reset();
 
 BOOL gotoxy(const WORD x,const WORD y)
@@ -41,6 +44,7 @@ class stats
     int versusgames;
     int versusplOne;
     int versusplTwo;
+    bool cpuex;
     public:
         void dispstatsS()
         {
@@ -111,12 +115,20 @@ class stats
             gotoxy(3,28);
         }
         void updatestats(short int);
+        bool toggleEX(bool);
 }tttics;
+
+bool stats::toggleEX(bool update=false)
+{
+    if(update)
+        tttics.cpuex=(tttics.cpuex)?false:true;
+    return tttics.cpuex;
+}
 
 void stats :: updatestats(short int update)
 {
     if(!readSuccess)
-        tttics.sologames=tttics.solowon=tttics.sololost=tttics.versusgames=tttics.versusplOne=tttics.versusplTwo=0;
+        tttics.sologames=tttics.solowon=tttics.sololost=tttics.versusgames=tttics.versusplOne=tttics.versusplTwo=tttics.cpuex=0;
     if(update<2)
     {
         tttics.sologames++;
@@ -155,10 +167,10 @@ bool readStats()
     return true;
 }
 
-void reset()
+void reset(char *arr)
 {
     for(int i=0;i<10;i++)
-        square[i] = (48+i);
+        arr[i] = (48+i);
 }
 
 int main()
@@ -173,6 +185,8 @@ int main()
 	gotoxy(0,28);
 	getch();
 	system("cls");
+	reset(square);
+	reset(vacant);
 	int mode;
 	while(1)
     {
@@ -181,16 +195,14 @@ int main()
         if(mode==2)
             gameVersus();
         else
-            //gameSolo(mode)
-            ;
+            gameSolo(mode);
     }
 
 }
 
-
 int menu()
 {
-	char option;
+	char option,aggcpu;
     gamemodeselection:
 	menuoutline("GAME MODE SELECTION","S","SOLO","V","VERSUS","Q","QUIT","\0","\0");
 	option=input(getch());
@@ -202,12 +214,21 @@ int menu()
 		if(option=='N')
 		{
 			markselection:
-			menuoutline("GAME MARK SELECTION","X","CROSS","O","NOUGHT","B","BACK","\0","\0");
+            aggcpu=(tttics.toggleEX())?251:' ';
+			menuoutline("GAME MARK SELECTION","X","CROSS","O","NOUGHT","\0","\0","B","BACK");
+			gotoxy(3,15);
+            cout<<" T   AGGRESSIVE CPU ("<<aggcpu<<")";
+            gotoxy(3,28);
 			option=input(getch());
 			if(option=='X')
 				return 1;
             else if(option=='O')
                 return -1;
+            else if(option=='T')
+            {
+                tttics.toggleEX(1);
+                goto markselection;
+            }
 			else if(option=='B')
 				goto mainmenusolo;
 			else
@@ -217,7 +238,7 @@ int menu()
 		{
 			statsS:
 			tttics.dispstatsS();
-			option=getch();
+			option=input(getch());
 			if(option=='B')
 				goto mainmenusolo;
 			else
@@ -312,16 +333,75 @@ void pausemenu(char call)
 		return;
 	else if(pauseopt=='Q')
 	{
-	    reset();
+	    reset(square);
+	    reset(vacant);
         menu();
     }
     else if(pauseopt=='R')
 	{
-		reset();
+		reset(square);
+	    reset(vacant);
 		gameVersus();
 	}
 	else
         goto quitsession;
+}
+
+void gameSolo(int sym)
+{
+    int player=1;
+	char mark,choice='\0';
+	int prev=0;
+    do
+    {
+
+		board(sym,prev);
+        player=(player%2)?1:2;
+        if(player*sym==1||player*sym==-2)
+        {
+            gotoxy(3,22);
+            cout <<setw(18)<<"Your turn";
+            gotoxy(3,28);
+            choice=input(getch());
+        }
+        else
+            choice=cpuai(sym);
+        mark=(player == 1) ? 'X' : 'O';
+        if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
+        {
+            prev=(int)choice-48;
+            markwrite(prev,mark);
+            vacantSpace(choice-48);
+        }
+        else
+            player--;
+        if(choice==27)
+        {
+            pausemenu(choice);
+            choice='0';
+        }
+		player++;
+	}while(checkwin()==-1);
+	board(0,checkwin());
+	if(checkwin())
+	{
+		if(--player*sym==1||--player*sym==-2)
+		{
+			tttics.updatestats(1);
+			choice='S';
+		}
+		else
+		{
+			tttics.updatestats(-1);
+			choice='s';
+		}
+	}
+	else
+	{
+		tttics.updatestats(0);
+		choice='D';
+	}
+	pausemenu(choice);
 }
 
 void gameVersus()
@@ -375,7 +455,104 @@ void gameVersus()
 	pausemenu(choice);
 }
 
+int compare(int x, int y, char mark)
+{
+    if(square[x]==square[y])
+    {
+        if(square[x]==mark)
+            return 1;
+    }
+    return 0;
+}
 
+char cpuai(int sym)
+{
+	char check=(sym==1)?'O':'X';
+	int i=0;
+	do
+	{
+	    if(square[1]=='1')
+        {
+            if(compare(2,3,check)||compare(4,7,check)||compare(5,9,check))
+                return square[1];
+        }
+        if(square[2]=='2')
+        {
+            if(compare(1,3,check)||compare(5,8,check))
+                return square[2];
+        }
+        if(square[3]=='3')
+        {
+            if(compare(1,2,check)||compare(6,9,check)||compare(5,7,check))
+                return square[3];
+        }
+        if(square[4]=='4')
+        {
+            if(compare(5,6,check)||compare(1,7,check))
+                return square[4];
+        }
+        if(square[5]=='5')
+        {
+            if(compare(1,9,check)||compare(4,6,check)||compare(2,8,check)||compare(3,7,check))
+                return square[5];
+        }
+        if(square[6]=='6')
+        {
+            if(compare(3,9,check)||compare(4,5,check))
+                return square[6];
+        }
+        if(square[7]=='7')
+        {
+            if(compare(8,9,check)||compare(1,4,check)||compare(3,5,check))
+                return square[7];
+        }
+        if(square[8]=='8')
+        {
+            if(compare(2,5,check)||compare(7,9,check))
+                return square[8];
+        }
+        if(square[9]=='9')
+        {
+            if(compare(1,5,check)||compare(7,8,check)||compare(3,6,check))
+                return square[9];
+        }
+        check=(check=='X')?'O':'X';
+        i++;
+	}while(i!=2);
+    return square[vacantSpace(0)];
+}
+
+int vacantSpace(short int func)
+{
+    int hax;
+    if(func)
+    {
+        int i=0;
+        while(vacant[i]-48<func)
+            i++;
+        for(;i<9;i++)
+            vacant[i]=vacant[i+1];
+        vacant[i]='\0';
+        for(int i=0;i<10;i++)
+            cout<<vacant[i];
+        system("pause");
+        return -1;
+    }
+    else
+    {
+        int SIZE=0,i=1;
+        srand((unsigned)time(NULL));
+        while(vacant[i]!='\0')
+        {
+            SIZE++;
+            i++;
+        }
+        hax=(rand()%(SIZE-1))+1;
+        cout<<SIZE<<"|"<<hax;
+        system("pause");
+        return hax;
+    }
+}
 
 int checkwin()
 {
