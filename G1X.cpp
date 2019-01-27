@@ -9,19 +9,21 @@
 
 using namespace std;
 
-char square[10];
-char vacant[10];
+char square[3][3];
+char vacant[9];
 bool readSuccess;
-int vacSpace=10;
+int vacSpace=9;
 
 int menu();
 BOOL gotoxy(const WORD, const WORD);
-void pausemenu(char);
+BOOL windowSetup();
+void pausemenu(char,int);
 void menuoutline(const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&,const string&);
 void gameSolo(int);
 void gameVersus();
 void markwrite(int,char);
 int compare(int,int,char);
+int cpuaix(int);
 char cpuai(int);
 int checkwin();
 void board(int,int);
@@ -35,6 +37,23 @@ BOOL gotoxy(const WORD x,const WORD y)
     coordinates.X=x;
     coordinates.Y=y;
     return SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),coordinates);
+}
+
+BOOL windowSetup()
+{
+    srand((unsigned)time(NULL));
+    _COORD coord;
+    CONSOLE_SCREEN_BUFFER_INFO SBINFO;
+    coord.X=80;
+    coord.Y=30;
+    _SMALL_RECT Rect;
+    Rect.Top=0;
+    Rect.Bottom=29;
+    Rect.Left=0;
+    Rect.Right=79;
+    SetConsoleTitleA("TICTACTICS");
+    SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE),TRUE,&Rect);
+    SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE),coord);
 }
 
 class stats
@@ -168,18 +187,23 @@ bool readStats()
     return true;
 }
 
-void reset(char *arr)
+void reset()
 {
-    for(int i=0;i<10;i++)
-        arr[i] = (48+i);
-    vacSpace=10;
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+            square[i][j] = (48+(3*i)+j+1);
+    }
+    for(int i=0;i<9;i++)
+        vacant[i] = (49+i);
+    vacSpace=9;
 }
 
 int main()
 {
+    windowSetup();
 	system("cls");
-	reset(square);
-	reset(vacant);
+	reset();
 	int mode;
 	while(1)
     {
@@ -190,14 +214,14 @@ int main()
         else
             gameSolo(mode);
     }
-
+    return 0;
 }
 
 int menu()
 {
 	char option,aggcpu;
     gamemodeselection:
-	menuoutline("GAME MODE SELECTION","S","SOLO","V","VERSUS","Q","QUIT","!","TICTACTICS BUILD 0119(032)");
+	menuoutline("GAME MODE SELECTION","S","SOLO","V","VERSUS","Q","QUIT","!","BUILD 0124(032)");
 	option=input(getch());
 	if(option=='S')
 	{
@@ -304,21 +328,21 @@ void boardHeader(const string &main, const string &first, const string &second, 
   cout<<setw(10)<<sel3<<" "<<op3;
 }
 
-void pausemenu(char call)
+void pausemenu(char call,int mode)
 {
 	quitsession:
 	char pauseopt;
 	if(call==27)
 		boardHeader("GAME PAUSED","\0","\0","Esc","RESUME","R","RESTART","Q","QUIT TO MAIN MENU");
-	else if(call=='X'||call=='O')
+	else if(call=='S')
 		boardHeader("CONGRATULATIONS,YOU'VE WON!","\0","\0","R","RESTART","Q","QUIT TO MAIN MENU","\0","\0");
-	else if(call=='s'||call=='S')
+	else if(call=='s')
 		boardHeader("BETTER LUCK NEXT TIME!","\0","\0","R","RESTART","Q","QUIT TO MAIN MENU","\0","\0");
 	else if(call=='V')
 		boardHeader("PLAYER 1 WINS!","\0","\0","R","RESTART","Q","QUIT TO MAIN MENU","\0","\0");
 	else if(call=='v')
 		boardHeader("PLAYER 2 WINS!","\0","\0","R","RESTART","Q","QUIT TO MAIN MENU","\0","\0");
-	else if(call=='D'||call=='x'||call=='o')
+	else if(call=='D'||call=='d')
 		boardHeader("GAME DRAW","\0","\0","R","RESTART","Q","QUIT TO MAIN MENU","\0","\0");
     gotoxy(3,28);
     pauseopt=input(getch());
@@ -326,23 +350,16 @@ void pausemenu(char call)
 		return;
 	else if(pauseopt=='Q')
 	{
-	    reset(square);
-	    reset(vacant);
+	    reset();
         main();
     }
     else if(pauseopt=='R')
 	{
-		reset(square);
-	    reset(vacant);
-	    if(call=='V'||call=='v'||call=='D')
+		reset();
+	    if(mode==2)
             gameVersus();
         else
-        {
-            if(call=='X'||call=='x'||call=='S')
-                gameSolo(1);
-            else
-                gameSolo(-1);
-        }
+            gameSolo(mode);
 	}
 	else
         goto quitsession;
@@ -350,93 +367,80 @@ void pausemenu(char call)
 
 void gameSolo(int sym)
 {
-    int player=1;
-	char mark,choice='\0';
+	char mark='X',choice='\0';
 	int prev=0;
     do
     {
 
 		board(sym,prev);
-        player=(player%2)?1:2;
-        if(player*sym==1||player*sym==-2)
+        if( (sym==1&&mark=='X') || (sym==-1&&mark=='O') )
         {
-            gotoxy(3,22);
-            cout <<setw(20)<<"Your turn";
             gotoxy(3,28);
             choice=input(getch());
         }
         else
             choice=cpuai(sym);
-        mark=(player == 1) ? 'X' : 'O';
-        if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
+        if(choice>=49&&choice<=57&&square[(int)(choice-49)/3][(int)(choice-49)%3]==choice)
+
         {
             prev=(int)choice-48;
             markwrite(prev,mark);
+            mark=(mark == 'X') ? 'O' : 'X';
         }
-        else
-            player--;
         if(choice==27)
         {
-            pausemenu(choice);
+            pausemenu(choice,sym);
             choice='0';
         }
-		player++;
 	}while(checkwin()==-1);
 	board(0,checkwin());
 	if(checkwin())
 	{
-		if(--player*sym==1||--player*sym==-2)
+		if((sym==1&&mark=='O') || (sym==-1&&mark=='X'))
 		{
 			tttics.updatestats(1);
-			choice=(sym==1)?'X':'O';
+			choice='S';
 		}
 		else
 		{
 			tttics.updatestats(-1);
-			choice=(sym==1)?'S':'s';
+			choice='s';
 		}
 	}
 	else
 	{
 		tttics.updatestats(0);
-		choice=(sym==1)?'x':'o';
+		choice='d';
 	}
-	pausemenu(choice);
+	pausemenu(choice,sym);
 }
 
 void gameVersus()
 {
-	int player=1;
-	char mark,choice='\0';
+	char mark='X',choice='\0';
 	int prev=0;
 	do
 	{
 
-		board(2,prev);
-        player=(player%2)?1:2;
-		gotoxy(3,22);
-		cout <<setw(18)<<"Player "<<player<<"'s turn";
+		board(mark,prev);
 		gotoxy(3,28);
 		choice=input(getch());
-		mark=(player == 1) ? 'X' : 'O';
-		if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
+        if(choice>=49&&choice<=57&&square[(int)(choice-49)/3][(int)(choice-49)%3]==choice)
         {
             prev=(int)choice-48;
             markwrite(prev,mark);
+            mark=(mark == 'X') ? 'O' : 'X';
         }
-        else
-            player--;
         if(choice==27)
         {
-            pausemenu(choice);
+            pausemenu(choice,2);
             choice='0';
         }
-		player++;
 	}while(checkwin()==-1);
 	board(0,checkwin());
 	if(checkwin())
 	{
-		if(--player==1)
+		if(mark=='O')
 		{
 			tttics.updatestats(2);
 			choice='V';
@@ -452,99 +456,111 @@ void gameVersus()
 		tttics.updatestats(4);
 		choice='D';
 	}
-	pausemenu(choice);
+	pausemenu(choice,2);
 }
 
-int compare(int x, int y, char mark)
+int compare(int x, int y, char mark)       //2 for horizontal,1 for diag left, -1 for diag right, 3 for vertical
 {
-    if(square[x]==square[y])
+    if(x==y)
     {
-        if(square[x]==mark)
+        if(square[(x+1)%3][(y+1)%3]==square[(x+2)%3][(y+2)%3])
+        {
+            if(square[(x+1)%3][(y+1)%3]==mark)
             return 1;
+        }
+    }
+    else if(x+y==2)
+    {
+        if(square[(x+1)%3][(y-1)%3]==square[(x+2)%3][(y-2)%3])
+        {
+            if(square[(x+1)%3][(y-1)%3]==mark)
+            return -1;
+        }
+    }
+
+    if(square[x][(y+1)%3]==square[x][(y+2)%3])
+    {
+        if(square[x][(y+1)%3]==mark)
+        return 2;
+    }
+    else if(square[(x+1)%3][y]==square[(x+2)%3][y])
+    {
+        if(square[(x+1)%3][y]==mark)
+        return 3;
     }
     return 0;
 }
+
+/*int cpuaix(int sym)
+{
+    if(sym==1)
+    {
+        if(square[5]=='5')
+            return 5;
+        int place=rand()%4;
+        return (place*3)+ (place%2)*(-1)+1;        // if even add 1
+    }
+    else
+    {
+        if(square[5]=='5'&&)
+            return (rand()%2)*8 + 1
+        else if(square[5]=='O')
+            return 2;
+        else;
+
+    }
+}*/
 
 char cpuai(int sym)
 {
 	char check=(sym==1)?'O':'X';
 	do
 	{
-	    if(square[1]=='1')
+	    for(int i=0;i<3;i++)
         {
-            if(compare(2,3,check)||compare(4,7,check)||compare(5,9,check))
-                return square[1];
-        }
-        if(square[2]=='2')
-        {
-            if(compare(1,3,check)||compare(5,8,check))
-                return square[2];
-        }
-        if(square[3]=='3')
-        {
-            if(compare(1,2,check)||compare(6,9,check)||compare(5,7,check))
-                return square[3];
-        }
-        if(square[4]=='4')
-        {
-            if(compare(5,6,check)||compare(1,7,check))
-                return square[4];
-        }
-        if(square[5]=='5')
-        {
-            if(compare(1,9,check)||compare(4,6,check)||compare(2,8,check)||compare(3,7,check))
-                return square[5];
-        }
-        if(square[6]=='6')
-        {
-            if(compare(3,9,check)||compare(4,5,check))
-                return square[6];
-        }
-        if(square[7]=='7')
-        {
-            if(compare(8,9,check)||compare(1,4,check)||compare(3,5,check))
-                return square[7];
-        }
-        if(square[8]=='8')
-        {
-            if(compare(2,5,check)||compare(7,9,check))
-                return square[8];
-        }
-        if(square[9]=='9')
-        {
-            if(compare(1,5,check)||compare(7,8,check)||compare(3,6,check))
-                return square[9];
+            for(int j=0;j<3;j++)
+            {
+                if(square[i][j]==49+(3*i+j))
+                {
+                    if(compare(i,j,check))
+                        return square[i][j];
+                }
+            }
         }
         check=(check=='X')?'O':'X';
 	}while((check=='X'&&sym==1)||(check=='O'&&sym==-1));
-    return vacant[detMARK()];
+	/*if(tttics.toggleEX())
+        return square[cpuaix(sym)];
+    else*/
+        return vacant[detMARK()];
 }
 
 int detMARK()
 {
-    srand((unsigned)time(NULL));
-    return ((rand()%(vacSpace-1))+1);
+    return (rand()%vacSpace);
 }
 
 int checkwin()
 {
-	if (compare(1,2,square[3]))
+	if (compare(0,0,square[0][0])==2)
 		return 321;
-	else if (compare(4,5,square[6]))
-		return 654;
-	else if (compare(7,8,square[9]))
-		return 987;
-	else if (compare(1,4,square[7]))
+	else if (compare(0,0,square[0][0])==3)
 		return 741;
-	else if (compare(2,5,square[8]))
-		return 852;
-	else if (compare(3,6,square[9]))
-		return 963;
-	else if (compare(1,5,square[9]))
+	else if (compare(0,0,square[0][0])==1)
 		return 951;
-	else if (compare(3,5,square[7]))
+	else if (compare(0,1,square[0][1]))
+		return 852;
+	else if (compare(0,2,square[0][2])==-1)
 		return 753;
-	else if (square[1] != '1' && square[2] != '2' && square[3] != '3' &&square[4] != '4' && square[5] != '5' && square[6] != '6' && square[7] != '7' && square[8] != '8' && square[9] != '9')
+	else if (compare(0,2,square[0][2])==3)
+		return 963;
+	else if (compare(1,0,square[1][0]))
+		return 654;
+	else if (compare(2,0,square[2][0]))
+		return 987;
+	else if (square[0][0] != '1' && square[0][1] != '2' && square[0][2] != '3' && square[1][0] != '4'
+          && square[1][1] != '5' && square[1][2] != '6' && square[2][0] != '7' && square[2][1] != '8'
+          && square[2][2] != '9')
 		return 0;
 	else
 		return -1;
@@ -555,15 +571,17 @@ void board(int mode,int WRITE)  //write is the current mark by player/cpu
 	system("cls");
 	int write=WRITE;
 	if(mode==1)
-        boardHeader("SOLO","YOU[X]","COMPUTER[O]","Esc","PAUSE","1-9","MARK","\0","\0");
+        boardHeader("SOLO","YOU[X]","COMPUTER[O]","Esc","PAUSE","1-9","MARK","X","TURN");
     else if(mode==-1)
-        boardHeader("SOLO","YOU[O]","COMPUTER[X]","Esc","PAUSE","1-9","MARK","\0","\0");
-	else if(mode==2)
-        boardHeader("VERSUS","PLAYER 1[X]","PLAYER 2[O]","Esc","PAUSE","1-9","MARK","\0","\0");
+        boardHeader("SOLO","YOU[O]","COMPUTER[X]","Esc","PAUSE","1-9","MARK","O","TURN");
+	else if(mode==88)
+        boardHeader("VERSUS","PLAYER 1[X]","PLAYER 2[O]","Esc","PAUSE","1-9","MARK","X","TURN");
+    else if(mode==79)
+        boardHeader("VERSUS","PLAYER 1[X]","PLAYER 2[O]","Esc","PAUSE","1-9","MARK","O","TURN");
     int verPos=8,element=1;
     while(verPos<19)
     {
-        gotoxy(55,verPos);
+        gotoxy(45,verPos);
         if(verPos==11||verPos==15)
         {
             cout << "-----+-----+-----" ;
@@ -574,11 +592,11 @@ void board(int mode,int WRITE)  //write is the current mark by player/cpu
         else
         {
             box(element,&write);cout<<"|";box(element+1,&write);cout<<"|";box(element+2,&write);
-            gotoxy(55,++verPos);write=WRITE;
+            gotoxy(45,++verPos);write=WRITE;
             box(-element,&write);cout <<"|";box(-element-1,&write);cout<<"|";box(-element-2,&write);
-            gotoxy(55,++verPos);write=WRITE;
+            gotoxy(45,++verPos);write=WRITE;
             box(element,&write);cout<<"|";box(element+1,&write);cout<<"|";box(element+2,&write);
-            gotoxy(55,++verPos);
+            gotoxy(45,++verPos);
             element+=3;
         }
     }
@@ -603,7 +621,7 @@ void menuoutline(const string &main,const string &sel1,const string &opt1,const 
 
 void markwrite(int x,char MARK)
 {
-    square[x] = MARK;
+    square[(int)(x-1)/3][(int)(x-1)%3] = MARK;
     int index=0;
     for(;vacant[index]-48<x;index++);
     while(index<vacSpace)
@@ -620,10 +638,10 @@ void box(int check,int *writ)
     if(check==curr)
         cout<<"+---+";
     else if((-check)==curr)
-        cout<<"| "<<square[-check]<<" |";
+        cout<<"| "<<square[(int)(-check-1)/3][(int)(-check-1)%3]<<" |";
     else if(check<0)
     {
-        cout<<"  "<<square[-check]<<"  ";
+        cout<<"  "<<square[(int)(-check-1)/3][(int)(-check-1)%3]<<"  ";
         return;
     }
     else
