@@ -9,7 +9,7 @@
 
 using namespace std;
 
-char square[10];
+char square[3][3];
 char vacant[10];
 bool readSuccess;
 int vacSpace=10;
@@ -187,10 +187,15 @@ bool readStats()
     return true;
 }
 
-void reset(char *arr)
+void reset()
 {
+    for(int i=0;i<3;i++)
+    {
+        for(int j=0;j<3;j++)
+            square[i][j] = (48+(3*i)+j+1)
+    }
     for(int i=0;i<10;i++)
-        arr[i] = (48+i);
+        vacant[i] = (48+i);
     vacSpace=10;
 }
 
@@ -383,7 +388,8 @@ void gameSolo(int sym)
         }
         else
             choice=cpuai(sym);
-        if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
+        if(choice>=49&&choice<=57&&square[(int)(choice-49)/3][(int)(choice-49)%3]==choice)
+
         {
             prev=(int)choice-48;
             markwrite(prev,mark);
@@ -427,7 +433,7 @@ void gameVersus()
 		board(mark,prev);
 		gotoxy(3,28);
 		choice=input(getch());
-        if(choice>=49&&choice<=57&&square[(int)choice-48]==choice)
+        if(choice>=49&&choice<=57&&square[(int)(choice-49)/3][(int)(choice-49)%3]==choice)
         {
             prev=(int)choice-48;
             markwrite(prev,mark);
@@ -461,12 +467,34 @@ void gameVersus()
 	pausemenu(choice);
 }
 
-int compare(int x, int y, char mark)
+int compare(int x, int y, char mark=square[x][y])
 {
-    if(square[x]==square[y])
+    if(x==y)
     {
-        if(square[x]==mark)
+        if(square[(x+1)%3][(y+1)%3]==square[(x+2)%3][(y+2)%3])
+        {
+            if(square[(x+1)%3][(y+1)%3]==mark)
             return 1;
+        }
+    }
+    else if(x+y==2)
+    {
+        else if(square[(x+1)%3][(y-1)%3]==square[(x+2)%3][(y-2)%3])
+        {
+            if(square[(x+1)%3][(y-1)%3]==mark)
+            return 1;
+        }
+    }
+
+    if(square[x][(y+1)%3]==square[x][(y+2)%3])
+    {
+        if(square[x][(y+1)%3]==mark)
+        return 1;
+    }
+    else if(square[(x+1)%3][y]==square[(x+2)%3][y])
+    {
+        if(square[(x+1)%3][y]==mark)
+        return 1;
     }
     return 0;
 }
@@ -496,50 +524,16 @@ char cpuai(int sym)
 	char check=(sym==1)?'O':'X';
 	do
 	{
-	    if(square[1]=='1')
+	    for(int i=0;i<3;i++)
         {
-            if(compare(2,3,check)||compare(4,7,check)||compare(5,9,check))
-                return square[1];
-        }
-        if(square[2]=='2')
-        {
-            if(compare(1,3,check)||compare(5,8,check))
-                return square[2];
-        }
-        if(square[3]=='3')
-        {
-            if(compare(1,2,check)||compare(6,9,check)||compare(5,7,check))
-                return square[3];
-        }
-        if(square[4]=='4')
-        {
-            if(compare(5,6,check)||compare(1,7,check))
-                return square[4];
-        }
-        if(square[5]=='5')
-        {
-            if(compare(1,9,check)||compare(4,6,check)||compare(2,8,check)||compare(3,7,check))
-                return square[5];
-        }
-        if(square[6]=='6')
-        {
-            if(compare(3,9,check)||compare(4,5,check))
-                return square[6];
-        }
-        if(square[7]=='7')
-        {
-            if(compare(8,9,check)||compare(1,4,check)||compare(3,5,check))
-                return square[7];
-        }
-        if(square[8]=='8')
-        {
-            if(compare(2,5,check)||compare(7,9,check))
-                return square[8];
-        }
-        if(square[9]=='9')
-        {
-            if(compare(1,5,check)||compare(7,8,check)||compare(3,6,check))
-                return square[9];
+            for(int j=0;j<3;j++)
+            {
+                if(square[i][j]==49+(3*i+j))
+                {
+                    if(compare(i,j,check))
+                        return square[i][j];
+                }
+            }
         }
         check=(check=='X')?'O':'X';
 	}while((check=='X'&&sym==1)||(check=='O'&&sym==-1));
@@ -556,11 +550,11 @@ int detMARK()
 
 int checkwin()
 {
-	if (compare(1,2,square[3]))
+	if (compare(0,0))
 		return 321;
-	else if (compare(4,5,square[6]))
+	else if (compare(1,0,square[1][2]))
 		return 654;
-	else if (compare(7,8,square[9]))
+	else if (compare(2,0,square[2][2]))
 		return 987;
 	else if (compare(1,4,square[7]))
 		return 741;
@@ -572,7 +566,9 @@ int checkwin()
 		return 951;
 	else if (compare(3,5,square[7]))
 		return 753;
-	else if (square[1] != '1' && square[2] != '2' && square[3] != '3' &&square[4] != '4' && square[5] != '5' && square[6] != '6' && square[7] != '7' && square[8] != '8' && square[9] != '9')
+	else if (square[0][0] != '1' && square[0][1] != '2' && square[0][2] != '3' && square[1][0] != '4'
+          && square[1][1] != '5' && square[1][2] != '6' && square[2][0] != '7' && square[2][1] != '8'
+          && square[2][2] != '9')
 		return 0;
 	else
 		return -1;
@@ -633,7 +629,7 @@ void menuoutline(const string &main,const string &sel1,const string &opt1,const 
 
 void markwrite(int x,char MARK)
 {
-    square[x] = MARK;
+    square[(int)(x-1)/3][(int)(x-1)%3] = MARK;
     int index=0;
     for(;vacant[index]-48<x;index++);
     while(index<vacSpace)
