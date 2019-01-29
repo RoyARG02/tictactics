@@ -23,12 +23,12 @@ void gameSolo(int);
 void gameVersus();
 void markwrite(int,char);
 int compare(int,int,char);
+int random(int);
 int cpuaix(int);
 char cpuai(int);
 int checkwin();
 void board(int,int);
 void box(int,int*);
-int detMARK();
 void reset();
 
 BOOL gotoxy(const WORD x,const WORD y)
@@ -42,15 +42,8 @@ BOOL gotoxy(const WORD x,const WORD y)
 BOOL windowSetup()
 {
     srand((unsigned)time(NULL));
-    _COORD coord;
-    CONSOLE_SCREEN_BUFFER_INFO SBINFO;
-    coord.X=80;
-    coord.Y=30;
-    _SMALL_RECT Rect;
-    Rect.Top=0;
-    Rect.Bottom=29;
-    Rect.Left=0;
-    Rect.Right=79;
+    COORD coord={80,30};
+    SMALL_RECT Rect={0,0,79,29};
     SetConsoleTitleA("TICTACTICS");
     SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE),TRUE,&Rect);
     SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE),coord);
@@ -221,7 +214,7 @@ int menu()
 {
 	char option,aggcpu;
     gamemodeselection:
-	menuoutline("GAME MODE SELECTION","S","SOLO","V","VERSUS","Q","QUIT","!","BUILD 0124(032)");
+	menuoutline("GAME MODE SELECTION","S","SOLO","V","VERSUS","Q","QUIT","!","BUILD 0129(032)");
 	option=input(getch());
 	if(option=='S')
 	{
@@ -234,7 +227,7 @@ int menu()
             aggcpu=(tttics.toggleEX())?251:' ';
 			menuoutline("GAME MARK SELECTION","X","CROSS","O","NOUGHT","\0","\0","B","BACK");
 			gotoxy(3,15);
-            cout<<" T   _EXTRA_AI_TOGGLE ("<<aggcpu<<")";
+            cout<<" T   HEIGHTENED DIFFICULTY (UNSTABLE!!) ("<<aggcpu<<")";
             gotoxy(3,28);
 			option=input(getch());
 			if(option=='X')
@@ -459,6 +452,11 @@ void gameVersus()
 	pausemenu(choice,2);
 }
 
+int random(int range)
+{
+    return rand()%range;
+}
+
 int compare(int x, int y, char mark)       //2 for horizontal,1 for diag left, -1 for diag right, 3 for vertical
 {
     if(x==y)
@@ -491,25 +489,32 @@ int compare(int x, int y, char mark)       //2 for horizontal,1 for diag left, -
     return 0;
 }
 
-/*int cpuaix(int sym)
+int cpuaix(int sym)
 {
     if(sym==1)
     {
-        if(square[5]=='5')
-            return 5;
-        int place=rand()%4;
-        return (place*3)+ (place%2)*(-1)+1;        // if even add 1
+        if(square[1][1]=='5')
+            return 4;
+        else
+            return (6*random(2))+2*random(2);
     }
     else
     {
-        if(square[5]=='5'&&)
-            return (rand()%2)*8 + 1
-        else if(square[5]=='O')
-            return 2;
-        else;
-
+        if(square[1][1]!='5')
+        {
+            if(square[0][0]=='X')
+                return 7;
+            else if(square[0][2]=='X')
+                return 3;
+            else if(square[2][0]=='X')
+                return 5;
+            else if(square[2][2]=='X')
+                return 8;
+        }
+        else
+            return 6*random(2)+2*random(2);
     }
-}*/
+}
 
 char cpuai(int sym)
 {
@@ -529,15 +534,10 @@ char cpuai(int sym)
         }
         check=(check=='X')?'O':'X';
 	}while((check=='X'&&sym==1)||(check=='O'&&sym==-1));
-	/*if(tttics.toggleEX())
-        return square[cpuaix(sym)];
-    else*/
-        return vacant[detMARK()];
-}
-
-int detMARK()
-{
-    return (rand()%vacSpace);
+	if(tttics.toggleEX())
+        return square[cpuaix(sym)/3][cpuaix(sym)%3];
+    else
+        return vacant[random(vacSpace)];
 }
 
 int checkwin()
