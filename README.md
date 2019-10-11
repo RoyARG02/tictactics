@@ -4,19 +4,19 @@ Tictactics is a simple program written in **C++** for the familiar tic-tac-toe (
 
 ### Screenshots
 <p align = "middle">
-  <img src="/screenshots/mainmenu.png" width=600>
-  <br><br>
-  <img src="screenshots/statistics.png" width=600>
-  <br><br>
-  <img src="screenshots/soloselection.png" width=600>
-  <br><br>
-  <img src="screenshots/versusselection.png" width=600>
-  <br><br>
-  <img src="screenshots/soloprogress.png" width=600>
-  <br><br>
-  <img src="screenshots/versusprogress.png" width=600>
-  <br><br>
-  <img src="screenshots/soloresult.png" width=600>
+    <img src = "screenshots/mainmenu.png" width = 600>
+    <br><br>
+    <img src = "screenshots/statistics.png" width = 600>
+    <br><br>
+    <img src = "screenshots/soloselection.png" width = 600>
+    <br><br>
+    <img src = "screenshots/versusselection.png" width = 600>
+    <br><br>
+    <img src = "screenshots/soloprogress.png" width = 600>
+    <br><br>
+    <img src = "screenshots/versusprogress.png" width = 600>
+    <br><br>
+    <img src = "screenshots/soloresult.png" width = 600>
 </p>
 
 #### The contents of this repo
